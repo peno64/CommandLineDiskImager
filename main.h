@@ -41,10 +41,15 @@ enum Status {STATUS_IDLE=0, STATUS_READING, STATUS_WRITING, STATUS_EXIT, STATUS_
 HANDLE hVolume;
 HANDLE hFile;
 HANDLE hRawDisk;
+unsigned long long numsectors;
+unsigned long long sector;
+unsigned long long sectorstep = 1024ul;
 static const unsigned short ONE_SEC_IN_MS = 1000;
 unsigned long long sectorsize;
 int status;
 char *sectorData;
+unsigned long long sectorDataPos;
+unsigned long long sectorDataLen;
 
 HANDLE getHandleOnFile(const char *filelocation, DWORD access);
 HANDLE getHandleOnDevice(int device, DWORD access);
@@ -66,6 +71,7 @@ typedef struct _DEVICE_NUMBER
     ULONG  PartitionNumber;
 } DEVICE_NUMBER, *PDEVICE_NUMBER;
 
+#if false
 typedef enum _STORAGE_PROPERTY_ID { 
   StorageDeviceProperty                  = 0,
   StorageAdapterProperty                 = 1,
@@ -112,5 +118,7 @@ typedef struct _STORAGE_PROPERTY_QUERY {
   STORAGE_QUERY_TYPE  QueryType;
   BYTE                AdditionalParameters[1];
 } STORAGE_PROPERTY_QUERY, *PSTORAGE_PROPERTY_QUERY;
+
+#endif
 
 #endif
