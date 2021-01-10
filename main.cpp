@@ -220,8 +220,38 @@ extern "C" {
 #endif
 }
 
+void DiskSize(char *disk)
+{
+	unsigned long long availablesectors;
+
+	int volumeID = toupper(*disk) - 'A';
+
+	hVolume = getHandleOnVolume(volumeID, GENERIC_READ);
+
+	DWORD deviceID = getDeviceID(hVolume);
+
+	hRawDisk = getHandleOnDevice(deviceID, GENERIC_READ);
+
+	availablesectors = getNumberOfSectors(hRawDisk, &sectorsize);
+
+	printf("Available sectors on disk %s = %lld, sectorsize = %lld, size = %lld MB\n", disk, availablesectors, sectorsize, availablesectors * sectorsize / 1024 / 1024);
+}
+
+void Usage(char *argv[])
+{
+	printf("Usage:\n");
+	printf(" %s /s <driveletter>", argv[0]);
+	printf("   Print size parameters of drive\n");
+	printf(" %s <driveletter> filename\n", argv[0]);
+	printf("   Copy drive data to filename\n");
+	printf(" %s filename <driveletter> [/f]\n", argv[0]);
+	printf("   Copy filename to drive. /f forces to copy even if file contains more data than disk\n");
+}
+
 int main(int argc, char *argv[])
 {
+	bool force = FALSE;
+
 #if TESTING
 	//gzip();
 	gunzip();
@@ -229,9 +259,36 @@ int main(int argc, char *argv[])
 	return 0;
 #endif
 
+	if (argc == 1)
+	{
+		Usage(argv);
+		return 0;
+	}
+
+	if ((argc == 3) && (strcmp(argv[1], "/s") == 0) && (strlen(argv[2]) == 1))
+	{
+		DiskSize(argv[2]);
+		return 0;
+	}
+
+	for (int i = 1; i < argc; i++)
+	{
+		bool remove = FALSE;
+
+		if (_stricmp(argv[i], "/f") == 0)
+			force = remove = TRUE;
+
+		if (remove)
+		{
+			memcpy(argv + i, argv + i + 1, (argc - i - 1) * sizeof(*argv));
+			argc--;
+			i--;
+		}
+	}
+
 	if (argc != 3)
 	{
-		printf("Not enough arguments\n");
+		printf("Wrong number of arguments\n");
 		return 1; //not enough arguments
 	}
 
@@ -349,9 +406,9 @@ int main(int argc, char *argv[])
 			}
 			availablesectors = getNumberOfSectors(hRawDisk, &sectorsize);
 			numsectors = read ? availablesectors : getFileSizeInSectors(hFile, sectorsize);
-			if (numsectors > availablesectors)
+			if (numsectors > availablesectors && !force)
 			{
-				printf("not enough space on volume\n");
+				printf("Not enough space on volume\n");
 				return 9; // not enough space on volume
 			}
 
